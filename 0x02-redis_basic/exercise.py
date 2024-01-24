@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-Contains the class definition for redis cache
+Creating a Cache class. In the __init__ method,
+store an instance of the Redis client as a private variable
+named _redis (using redis.Redis()) and flush the instance using flushdb.
 """
 import redis
 import uuid
@@ -10,22 +12,13 @@ from typing import Union, Callable, Optional
 
 def count_calls(method: Callable) -> Callable:
     """
-    Counts the number of times a function is called
-    Args:
-        method: The function to be decorated
-    Returns:
-        The decorated function
+    Counting the number of times a function is called.
     """
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         """
-        Wrapper function for the decorated function
-        Args:
-            self: The object instance
-            *args: The arguments passed to the function
-            **kwargs: The keyword arguments passed to the function
-        Returns:
-            The return value of the decorated function
+        Wrapper function for the decorated function and
+        returns the return value of the decorated function
         """
         key = method.__qualname__
         self._redis.incr(key)
@@ -36,11 +29,8 @@ def count_calls(method: Callable) -> Callable:
 
 def call_history(method: Callable) -> Callable:
     """
-    Counts the number of times a function is called
-    Args:
-        method: The function to be decorated
-    Returns:
-        The decorated function
+    Counts the number of times a function is called and
+    Returns the decorated function
     """
     key = method.__qualname__
     inputs = key + ":inputs"
@@ -49,13 +39,8 @@ def call_history(method: Callable) -> Callable:
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         """
-        Wrapper function for the decorated function
-        Args:
-            self: The object instance
-            *args: The arguments passed to the function
-            **kwargs: The keyword arguments passed to the function
-        Returns:
-            The return value of the decorated function
+        Wrapper function for the decorated function and
+        returns the return value of the decorated function
         """
         self._redis.rpush(inputs, str(args))
         data = method(self, *args, **kwargs)
@@ -67,11 +52,8 @@ def call_history(method: Callable) -> Callable:
 
 def replay(method: Callable) -> None:
     """
-    Replays the history of a function
-    Args:
-        method: The function to be decorated
-    Returns:
-        None
+    Replays the history of a function and
+    Returns None
     """
     name = method.__qualname__
     cache = redis.Redis()
@@ -90,9 +72,7 @@ class Cache:
     """
     def __init__(self) -> None:
         """
-        Initialize redis client
-        Attributes:
-            self._redis (redis.Redis): redis client
+        Initializing redis client
         """
         self._redis = redis.Redis()
         self._redis.flushdb()
@@ -101,11 +81,8 @@ class Cache:
     @call_history
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """
-        Store data in redis cache
-        Args:
-            data (dict): data to store
-        Returns:
-            str: key
+        Storing data in redis cache and
+        returns str: key
         """
         key = str(uuid.uuid4())
         self._redis.set(key, data)
@@ -114,7 +91,7 @@ class Cache:
     def get(self, key: str, fn: Optional[Callable] = None)\
             -> Union[str, bytes, int, float, None]:
         """
-        Get data from redis cache
+        Getting data from redis cache
         """
         data = self._redis.get(key)
         if data is not None and fn is not None and callable(fn):
@@ -123,21 +100,15 @@ class Cache:
 
     def get_str(self, key: str) -> str:
         """
-        Get data as string from redis cache
-        Args:
-            key (str): key
-        Returns:
-            str: data
+        Getting data as string from redis cache and
+        returns str: data
         """
         data = self.get(key, lambda x: x.decode('utf-8'))
         return data
 
     def get_int(self, key: str) -> int:
         """
-        Get data as integer from redis cache
-        Args:
-            key (str): key
-        Returns:
-            int: data
+        Getting data as integer from redis cache and
+        returns int: data
         """
         data = self
